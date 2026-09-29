@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "contract": {
+      "command": "node",
+      "args": ["dist/index.js", "test/fixtures/crm.openapi.json"]
+    }
+  }
+}

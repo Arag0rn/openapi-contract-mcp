@@ -1,0 +1,37 @@
+{
+  "name": "openapi-contract-mcp",
+  "version": "0.1.0",
+  "description": "MCP server that lets coding agents check requests against a live OpenAPI contract instead of guessing",
+  "type": "module",
+  "bin": {
+    "openapi-contract-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke": "npm run build && tsx scripts/smoke.ts",
+    "eval": "npm run build && tsx evals/run.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "author": "Serhii Khabuzov",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.2.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.2.0",
+    "@types/node": "^24.19.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.2"
+  }
+}

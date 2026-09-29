@@ -1,0 +1,204 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Demo CRM API", "version": "1.4.0" },
+  "paths": {
+    "/auth/set_email/": {
+      "post": {
+        "operationId": "change-email",
+        "summary": "Change the e-mail of the current account",
+        "tags": ["accounts"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["new_email", "current_password"],
+                "properties": {
+                  "new_email": { "type": "string", "format": "email" },
+                  "current_password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "E-mail changed" },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/users/": {
+      "parameters": [{ "$ref": "#/components/parameters/TenantHeader" }],
+      "get": {
+        "operationId": "users-list",
+        "summary": "List users",
+        "tags": ["users"],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "role", "in": "query", "schema": { "$ref": "#/components/schemas/Role" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": { "type": "integer" },
+                    "results": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "users-create",
+        "summary": "Create a user",
+        "tags": ["users"],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/users/{id}/": {
+      "parameters": [{ "name": "id", "in": "path", "schema": { "type": "integer" } }],
+      "get": {
+        "operationId": "users-retrieve",
+        "summary": "Get one user",
+        "tags": ["users"],
+        "responses": {
+          "200": {
+            "description": "The user",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } }
+          },
+          "404": { "description": "Not found" }
+        }
+      },
+      "patch": {
+        "operationId": "users-partial-update",
+        "summary": "Update some fields of a user",
+        "tags": ["users"],
+        "deprecated": true,
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatchedUser" } } }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/categories/{id}/": {
+      "get": {
+        "operationId": "categories-retrieve",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": {
+            "description": "A category tree",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Category" } } }
+          }
+        }
+      }
+    },
+    "/payments/": {
+      "post": {
+        "operationId": "payments-create",
+        "summary": "Start a payment",
+        "tags": ["billing"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [{ "$ref": "#/components/schemas/CardPayment" }, { "$ref": "#/components/schemas/WalletPayment" }]
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Payment started" } }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "TenantHeader": { "name": "X-Tenant", "in": "header", "required": true, "schema": { "type": "string" } }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Validation failed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "additionalProperties": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Role": { "type": "string", "enum": ["owner", "admin", "staff"] },
+      "Address": {
+        "type": "object",
+        "required": ["city"],
+        "properties": {
+          "city": { "type": "string" },
+          "zip_code": { "type": "string", "nullable": true }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["id", "email", "role"],
+        "properties": {
+          "id": { "type": "integer", "readOnly": true },
+          "email": { "type": "string", "format": "email" },
+          "first_name": { "type": "string" },
+          "role": { "$ref": "#/components/schemas/Role" },
+          "address": { "$ref": "#/components/schemas/Address" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "created_at": { "type": "string", "format": "date-time", "readOnly": true }
+        }
+      },
+      "PatchedUser": {
+        "allOf": [
+          { "type": "object", "properties": { "first_name": { "type": "string" } } },
+          { "type": "object", "properties": { "role": { "$ref": "#/components/schemas/Role" } } }
+        ]
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "children": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } }
+        }
+      },
+      "CardPayment": {
+        "type": "object",
+        "required": ["method", "plan_id"],
+        "additionalProperties": false,
+        "properties": {
+          "method": { "type": "string", "enum": ["card"] },
+          "plan_id": { "type": "integer" }
+        }
+      },
+      "WalletPayment": {
+        "type": "object",
+        "required": ["method", "amount"],
+        "additionalProperties": false,
+        "properties": {
+          "method": { "type": "string", "enum": ["wallet"] },
+          "amount": { "type": "number" }
+        }
+      }
+    }
+  }
+}
